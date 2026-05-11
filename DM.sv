@@ -9,7 +9,7 @@ module DM (
 );
 
     // Memory size: 2^10 bytes = 1024 bytes = 256 words (32-bit each)
-    localparam DEPTH = 256;
+    localparam DEPTH = 8;
     localparam ADDR_WIDTH = $clog2(DEPTH);  // 8 bits for word addressing
 
     // Memory array: 256 words of 32 bits each
