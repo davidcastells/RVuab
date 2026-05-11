@@ -1,4 +1,7 @@
-module RVuab(input logic clk, input logic reset, output logic [31:0] PC_q);
+module RVuab(input logic clk, input logic reset, output logic [31:0] PC_q,
+	// To Debug in Quartus Simulator we have to export signals to the top entity
+	output logic [9:0] microprogram_add
+);
 
 	logic [31:0] IR_d;
 	logic [31:0] IR_q;
@@ -104,7 +107,10 @@ module RVuab(input logic clk, input logic reset, output logic [31:0] PC_q);
 		.ldPC(ldPC), .slPCin(slPCin),
 		.ldRFlags(ldRFlags),
 		// Flags
-		.gt(gt_q), .lt(lt_q), .eq(eq_q), .zero(zero_q));
+		.gt(gt_q), .lt(lt_q), .eq(eq_q), .zero(zero_q),
+		// Debug
+		.add(microprogram_add),
+		);
 
 	// Memories	
 	Mux2 iSelRD(.d0(adder_out), .d1(DM_q), .d2(alu_out), .d3(32'b0), .sel(slDinRD), .y(rd_d));
