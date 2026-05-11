@@ -13,14 +13,25 @@ module IM (
     localparam ADDR_WIDTH = $clog2(DEPTH);  // 8 bits for word addressing
 
     // Memory array: 256 words of 32 bits each
-    logic [31:0] memory [0:DEPTH-1];
+    // logic [31:0] memory [0:DEPTH-1];
 
     // Word-aligned address: ignore lower 2 bits
-    wire [ADDR_WIDTH-1:0] word_addr = address[ADDR_WIDTH+1:2];
+    // wire [ADDR_WIDTH-1:0] word_addr = address[ADDR_WIDTH+1:2];
 
 	 always_comb begin
-	 case (word_addr)
-			10'd0: data_out = 32'h5100513; // addi x10, x0, 81
+	 case (address)
+			10'h00: data_out = 32'h05100513; // addi x10, x0, 81
+			10'h04: data_out = 32'h00100613; // addi x12, x0, 1
+			10'h08: data_out = 32'h00000693; // addi x13, x0, 0		
+			10'h0C: data_out = 32'h00100713; // addi x14, x0, 1
+			10'h10: data_out = 32'h00e54c63; // blt x10, x14, 24
+			10'h14: data_out = 32'h00161793; // slli x15, x12, 1
+			10'h18: data_out = 32'h00178793; // addi x15, x15, 1
+			10'h1C: data_out = 32'h00f70733; // add  x14, x14, x15
+			10'h20: data_out = 32'h00060693; // addi x13, x12, 0
+			10'h24: data_out = 32'h00160613; // addi x12, x12, 1
+			10'h28: data_out = 32'hfe9ff06f; // jal x0,-24
+			10'h2C: data_out = 32'h00068593; // addi x11, x13, 0
 			default: data_out = 32'h0000006F; // j 0
 	 endcase
 	 end
