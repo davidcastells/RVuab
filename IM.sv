@@ -18,7 +18,14 @@ module IM (
     // Word-aligned address: ignore lower 2 bits
     wire [ADDR_WIDTH-1:0] word_addr = address[ADDR_WIDTH+1:2];
 
+	 always_comb begin
+	 case (word_addr)
+			10'd0: data_out = 32'h5100513; // addi x10, x0, 81
+			default: data_out = 32'h0000006F; // j 0
+	 endcase
+	 end
     // Read operation (combinational)
+	 /*
     always_comb begin
         if (read) begin
             data_out = memory[word_addr];
@@ -36,5 +43,5 @@ module IM (
             if (be[2]) memory[word_addr][23:16] <= data_in[23:16];
             if (be[3]) memory[word_addr][31:24] <= data_in[31:24];
     end
-
+*/
 endmodule
