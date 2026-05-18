@@ -1,3 +1,5 @@
+`default_nettype none
+
 module SR(input logic [31:0] i1,i2, input logic inv, zero_i20, output logic [31:0] r, r_and, r_xor);
     
 logic [31:0] co_internal;
