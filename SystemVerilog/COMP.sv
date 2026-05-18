@@ -1,3 +1,5 @@
+`default_nettype none
+
 module COMP (input logic [31:0] i1, i2, output logic [31:0] unsigned_lt, output logic [31:0] signed_lt, output logic lt, gt, eq);
 	// @todo check if lt, gt, eq should treat i1, i2 as signed or unsigned
 	
