@@ -1,3 +1,5 @@
+`default_nettype none
+
 module immGen(input logic [31:0] ir, output logic [31:0] imm);
 logic [2:0] imm_typ;
 logic [6:0] opcode;
