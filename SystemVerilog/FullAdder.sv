@@ -1,3 +1,5 @@
+`default_nettype none
+
 module FullAdder(input logic i1, i2, ci, inv_i2, output logic  r, co, r_and, r_xor );
 
 logic i2_eff, xori;
