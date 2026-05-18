@@ -1,3 +1,5 @@
+`default_nettype none
+
 module Reg32 (
     input  logic        clk,      // Clock
     input  logic        reset,    // Active-low asynchronous reset
