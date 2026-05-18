@@ -1,3 +1,8 @@
+`default_nettype none
+
+// localparam OP_ALU_ADD 	= 4'b0010;
+// localparam OP_ALU_NONE 	= 4'b1111;
+
 module ALU (
 	input logic [3:0] op,
 	input logic [31:0] i1, 
