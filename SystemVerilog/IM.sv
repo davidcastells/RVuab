@@ -1,3 +1,5 @@
+`default_nettype none
+
 module IM (
     input  logic        clk,
     input  logic [31:0] address,
