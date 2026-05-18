@@ -1,5 +1,6 @@
-module RVuab(input logic clk, input logic reset, output logic [31:0] PC_q,
+module RVuab(input logic clk, input logic reset, 
 	// To Debug in Quartus Simulator we have to export signals to the top entity
+	output logic [31:0] PC_q,
 	output logic [9:0] microprogram_add
 );
 
@@ -16,7 +17,7 @@ module RVuab(input logic clk, input logic reset, output logic [31:0] PC_q,
 	logic  ldPC;
 
 	logic [31:0] DAdr_q;
-	logic [31:0] DAdr_load;
+	logic ldDAdr;
 
 	logic [31:0] alu_i1;
 	logic [31:0] alu_i2;
@@ -57,7 +58,7 @@ module RVuab(input logic clk, input logic reset, output logic [31:0] PC_q,
 
 	Reg32 IR(.clk(clk), .reset(reset), .load(ldIR), .d(IR_d), .q(IR_q));
 	Reg32 PC(.clk(clk), .reset(reset), .load(ldPC), .d(PC_d), .q(PC_q));
-	Reg32 DAdr(.clk(clk), .reset(reset), .load(DAdr_load), .d(alu_out), .q(DAdr_q));
+	Reg32 DAdr(.clk(clk), .reset(reset), .load(ldDAdr), .d(alu_out), .q(DAdr_q));
 
 	Reg1 r_gt(.clk(clk), .reset(reset), .load(ldRFlags), .d(gt_d), .q(gt_q));
 	Reg1 r_lt(.clk(clk), .reset(reset), .load(ldRFlags), .d(lt_d), .q(lt_q));
@@ -68,9 +69,9 @@ module RVuab(input logic clk, input logic reset, output logic [31:0] PC_q,
 	immGen immGen(.ir(IR_q), .imm(imm));
 
 	// Reg File
-	assign rs1_addr = IR_q[11:7];
-	assign rs2_addr = IR_q[19:15];
-	assign rd_addr = IR_q[24:20];
+	assign rd_addr = IR_q[11:7];
+	assign rs1_addr = IR_q[19:15];
+	assign rs2_addr = IR_q[24:20];
 
 	RegFile RegFile(.clk(clk), .reset(reset), .rs1_addr(rs1_addr), .rs2_addr(rs2_addr), .rd_addr(rd_addr),
 		.ld_rd(ldRD), .rd(rd_d), .rs1(rs1_q), .rs2(rs2_q));
@@ -106,10 +107,11 @@ module RVuab(input logic clk, input logic reset, output logic [31:0] PC_q,
 		.ldIR(ldIR), 
 		.ldPC(ldPC), .slPCin(slPCin),
 		.ldRFlags(ldRFlags),
+		.ldDAdr(ldDAdr),
 		// Flags
 		.gt(gt_q), .lt(lt_q), .eq(eq_q), .zero(zero_q),
 		// Debug
-		.add(microprogram_add),
+		.add(microprogram_add)
 		);
 
 	// Memories	
