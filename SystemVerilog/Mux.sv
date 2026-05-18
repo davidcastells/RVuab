@@ -1,3 +1,5 @@
+`default_nettype none
+
 module Mux1 #(
     parameter int WIDTH = 32
 ) (
