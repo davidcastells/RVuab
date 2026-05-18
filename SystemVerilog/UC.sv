@@ -5,8 +5,15 @@ localparam IT_IF = 2'b01;
 localparam IT_GOTO = 2'b10;
 localparam IT_GMP = 2'b11;
 
-localparam OP_ALU_ADD = 4'b0010;
+localparam COND_GT = 2'b00;
+localparam COND_LT = 2'b01;
+localparam COND_EQ = 2'b10;
+localparam COND_ZERO = 2'b11;
 
+localparam OP_ALU_ADD = 4'b0010;
+localparam OP_ALU_NONE 	= 4'b1111;
+
+//typedef union{ uot_t uop; logic [9:0] add} uop_add_t;
 /*typedef struct packed {
 			logic slALUi1;
 			logic slALUi2;
@@ -26,9 +33,14 @@ localparam OP_ALU_ADD = 4'b0010;
 typedef struct packed {
 	logic [1:0] cond;	// Condition
 	logic [1:0] it;	// instruction type
-	logic [9:0] add;	// address
-	uop_t uop;			// micro-orders
+	uop_add_t uop_add;
+	
+	//logic [9:0] add;	// address
+	//uop_t uop;			// micro-orders
+	
 } rom_row;*/
+
+
 
 module UC(input logic clk, reset, 
 	// IR
@@ -43,7 +55,7 @@ module UC(input logic clk, reset,
 	output logic RW_IM, 
 	output logic [1:0] slDinRD,
 	output logic ldRD, RW_DM,
-	output logic ldIR, ldPC, slPCin, ldRFlags,
+	output logic ldIR, ldPC, slPCin, ldRFlags, ldDAdr,
 	// Flags
 	input logic gt, lt, eq, zero,
 	
@@ -73,11 +85,12 @@ module UC(input logic clk, reset,
 	logic row_ldPC;
 	logic row_slPCin;
 	logic row_ldRFlags;
+	logic row_ldDAdr;
 
 	logic cond;
 	
-	assign cond = 0;
-	
+	Mux2 #(.WIDTH(1)) cond_mux(.d0(gt), .d1(lt), .d2(eq), .d3(zero), .sel(row_cond), .y(cond));
+
 	IUPD IUPD(.iupd_op(IR_op), .iupd_f3(IR_f3), .iupd_f7(IR_f7), .iupd_start(DirStartuP));
 	CtrlSeq CtrlSeq(.it(row_it), .cond(cond), .SnA(SnA), .enable(enable));
 	Sequencer Sequencer(.clk(clk), .reset(reset), .SnA(SnA), .rom_add(row_add), .DirStartuP(DirStartuP), .add(add));
@@ -86,7 +99,7 @@ module UC(input logic clk, reset,
 		.slALUi1(row_slALUi1), .slALUi2(row_slALUi2),
 		.opALU(row_opALU), .slAddi1(row_slAddi1),  .RW_IM(row_RW_IM), .slDinRD(row_slDinRD),
 		.ldRD(row_ldRD), .RW_DM(row_RW_DM), .ldIR(row_ldIR), .ldPC(row_ldPC),
-		.slPCin(row_slPCin), .ldRFlags(row_ldRFlags) );	
+		.slPCin(row_slPCin), .ldRFlags(row_ldRFlags), .ldDAdr(row_ldDAdr) );	
 
 	// Computing Resources
 	assign slALUi1 = row_slALUi1;
@@ -103,6 +116,7 @@ module UC(input logic clk, reset,
 	assign ldPC = row_ldPC & enable;
 	assign slPCin = row_slPCin;
 	assign ldRFlags = row_ldRFlags & enable;
+	assign ldDAdr = row_ldDAdr & enable;
 	
 endmodule
 
@@ -118,11 +132,20 @@ module IUPD(input logic [6:0] iupd_op,
 			7'h13:
 				case (iupd_f3)
 					3'h0: iupd_start = 10'd132;	// ADDI
+					default: iupd_start = 10'd128;
 				endcase 
 			7'h33: 
 				case (iupd_f3)
 					3'h0: iupd_start = 10'd130;	// ADD
+					default: iupd_start = 10'd128;
 				endcase
+			7'h63:
+				case (iupd_f3)
+					3'h0: iupd_start = 10'd148;	// BEQ
+					3'h4: iupd_start = 10'd151; 	// BLT
+					default: iupd_start = 10'd128;
+				endcase
+			default: iupd_start = 10'd128;
 		endcase
 	end
 endmodule
@@ -174,7 +197,7 @@ module ROM(input logic [9:0] rom_add,
 	output logic [3:0] opALU,
 	output logic slAddi1, RW_IM,
 	output logic [1:0] slDinRD,
-	output logic ldRD, RW_DM, ldIR, ldPC, slPCin, ldRFlags);
+	output logic ldRD, RW_DM, ldIR, ldPC, slPCin, ldRFlags, ldDAdr);
 
 
 	always_comb begin
@@ -194,19 +217,73 @@ module ROM(input logic [9:0] rom_add,
 		ldPC = 0; 
 		slPCin = 0; 
 		ldRFlags = 0;
+		ldDAdr = 0;
 		
 		case (rom_add)
 			128: begin row_it = IT_EXE; ldIR = 1; end 				// Fetch instruction
 			129: begin row_it = IT_GMP; end								// Jump to instruction microprogram
 			
 			// ADD
-			130: begin row_it = IT_EXE; ldRD = 1; opALU = OP_ALU_ADD; slALUi1 = 1'b0; slALUi2 = 1'b0; ldPC = 1; end
+			130: begin row_it = IT_EXE; ldRD = 1; slDinRD = 2'b10; opALU = OP_ALU_ADD; slALUi1 = 1'b0; slALUi2 = 1'b0; ldPC = 1; end
 			131: begin row_it = IT_GOTO; row_add = 10'd128; end
 			
 			// ADDI
-			132: begin row_it = IT_EXE; ldRD = 1; opALU = OP_ALU_ADD; slALUi1 = 1'b0; slALUi2 = 1'b1; ldPC = 1; end
+			132: begin row_it = IT_EXE; ldRD = 1; slDinRD = 2'b10; opALU = OP_ALU_ADD; slALUi1 = 1'b0; slALUi2 = 1'b1; ldPC = 1; end
 			133: begin row_it = IT_GOTO; row_add = 10'd128; end
 			
+			// SUB
+			//134
+			
+			// XOR
+			// 136
+			
+			// LW
+			// 138
+			
+			// SW
+			// 141
+			
+			// SLTI
+			// 146
+			
+			// BEQ
+			148: begin row_it = IT_EXE; opALU = OP_ALU_NONE; slALUi1 = 1'b0; slALUi2 = 1'b0; ldRFlags = 1'b1; end
+			149: begin row_it = IT_IF; row_cond = COND_EQ; row_add = 160; end
+			150: begin row_it = IT_GOTO; row_add = 162; end
+			
+			// BLT
+			151: begin row_it = IT_EXE; opALU = OP_ALU_NONE; slALUi1 = 1'b0; slALUi2 = 1'b0; ldRFlags = 1'b1; end
+			152: begin row_it = IT_IF; row_cond = COND_LT; row_add = 160; end
+			153: begin row_it = IT_GOTO; row_add = 162; end
+			
+			// branch
+			160: begin row_it = IT_EXE; ldPC = 1; slAddi1 = 1'b1; end
+			161: begin row_it = IT_GOTO; row_add = 10'd128; end
+			
+			// not branch
+			162: begin row_it = IT_EXE; ldPC = 1; end
+			163: begin row_it = IT_GOTO; row_add = 10'd128; end
+			
+			default:
+			begin
+				row_cond = 0;
+				row_it = 0;
+				
+				row_add = 0;
+				slALUi1 = 0;
+				slALUi2 = 0;
+				opALU = 0;
+				slAddi1 = 0; 
+				RW_IM = 0;
+				slDinRD = 0;
+				ldRD = 0; 
+				RW_DM = 0; 
+				ldIR = 0; 
+				ldPC = 0; 
+				slPCin = 0; 
+				ldRFlags = 0;
+				ldDAdr = 0;
+			end
 		endcase
 	end
 
